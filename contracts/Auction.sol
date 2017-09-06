@@ -20,8 +20,8 @@ contract CommitRevealAuction is usingOraclize {
 	mapping(bytes32 => string) bidStatuses; // Status of each bid: either 'committed' or 'revealed'
 
 	event logString(string); // Event for logging a 'print statement'
-	event newBidCommit(string, bytes32) // Event for logging a new bid commit
-	event winningBid(string) // Event for printing the auction-winning bid
+	event newBidCommit(string, bytes32); // Event for logging a new bid commit
+	event winningBid(string); // Event for printing the auction-winning bid
 
 	/* The constructor for the auction: takes in the commit phase length, name of the item being auctioned,
 	as well as the starting price. */
@@ -49,9 +49,77 @@ contract CommitRevealAuction is usingOraclize {
 
 		// Check if the commit has been used before. 'bytes' is a dynamically-sized byte array.
 		// 'memory' means the bytesBidCommit is stored in memory
-		// FIGURE OUT WHAT THIS LINE REALLY DOES 
+		// We're casting the value of bidStatuses[_bidCommit] into a byte array to check if the commit has been used before
+		// (probably because there's no direct way to check if there's a value mapped to this commit)
 		bytes memory bytesBidCommit =  bytes(bidStatuses[_bidCommit]);
+		if (bytesBidCommit.length != 0) {
+			throw;
+		}
+
+		// Add this commit to the bidCommits array, update bidStatuses and log the event
+		bidCommits.push(_bidCommit);
+		bidStatuses[_bidCommit] = "Committed";
+		newBidCommit("Bid committed with the following hash: ", _bidCommit);
 
 	}
 
+	function revealBid(string _bid, bytes32 _bidCommit) {
+		// Only reveal after the commit phase is over
+		if (now < commitPhaseEndTime) {
+			throw;
+		}
+
+		// Index into _bidCommit in the bidStatuses mapping
+		bytes memory bytesBidStatus = bytes(bidStatuses[_bidCommit]);
+		// If there's no value mapped to this commit, then bid was not committed 
+		if (bytesBidStatus.length == 0){
+			logString("A bid with this commit was not cast.");
+		}
+		// If the bid was already committed
+		else if (bytesBidStatus[0] != "C"){
+			logString("This bid was already cast");
+			return;
+		}
+
+		// Verify that the commit is the equivalent of the hash of original bid
+		if (_bidCommit != keccak256(_bid)) {
+			logString("Bid hash does not match bid commit.");
+			return;
+		}
+
+		// Obtain the bid value by slicing the bid on the '-' character
+		var bidString = _bid.toSlice();
+		var bidValue = bidString.split('-'.toSlice());
+
+		logString(bidValue.toString());
+
+		// Cast the bid from string to integer, so that we can compare it with other values
+		var bidInt = parseInt(bidValue.toString()); 
+
+		// Cannot have a bid that's lower than or equal to starting price
+		if (bidInt <= startingPrice){
+			logString("Bid must be higher than starting price.");
+			return;
+		}
+
+		// If the bid is higher than the current leading bid, update the leading bid.
+		if (bidInt > leadingBid){
+			leadingBid = bidInt;
+			logString("Leading bid updated.");
+		}
+
+		logString("Bid counted.");
+		bidStatuses[_bidCommit] = "Revealed"; 
+	}
+
+	/* Retrieves the winner of the auction */
+	function getWinner() constant returns(uint) {
+		// Only get winner after the commit phase has ended
+		if (now < commitPhaseEndTime) {
+			throw;
+		}
+
+		return leadingBid;
+
+	}
 }
