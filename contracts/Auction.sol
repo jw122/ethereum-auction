@@ -25,7 +25,7 @@ contract CommitRevealAuction is usingOraclize {
 
 	/* The constructor for the auction: takes in the commit phase length, name of the item being auctioned,
 	as well as the starting price. */
-	function CommitRevealAuction(uint _commitPhaseLengthInSeconds, string _item, uint _price){
+	function CommitRevealAuction(uint _commitPhaseLengthInSeconds, string _item, uint _price) {
 
 		// If the commit phase length is too short, throw an error
 		if (_commitPhaseLengthInSeconds < 20) {
@@ -37,6 +37,21 @@ contract CommitRevealAuction is usingOraclize {
 		item = _item; 
 		leadingBid = _price; // Current leading bid will be the starting price itself
 		startingPrice = _price; // The starting price as given in the constructor
+	}
+
+	/* This function is called when a bid is to be committed. The input is the hash of the bid. */
+	function commitBid (bytes32 _bidCommit) {
+
+		// Only commit during the commit phase
+		if (now > commitPhaseEndTime) {
+			throw;
+		}
+
+		// Check if the commit has been used before. 'bytes' is a dynamically-sized byte array.
+		// 'memory' means the bytesBidCommit is stored in memory
+		// FIGURE OUT WHAT THIS LINE REALLY DOES 
+		bytes memory bytesBidCommit =  bytes(bidStatuses[_bidCommit]);
+
 	}
 
 }
