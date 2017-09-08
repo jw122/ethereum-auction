@@ -1,7 +1,7 @@
 pragma solidity ^0.4.7;
 
-import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
-import "github.com/Arachnid/solidity-stringutils/strings.sol";
+import "../ethereum-api/oraclizeAPI.sol";
+import "../solidity-stringutils/strings.sol";
 
 /* This is a second price sealded-bid auction that uses the commit-reveal method. */
 
@@ -12,16 +12,18 @@ contract CommitRevealAuction is usingOraclize {
 	address public auctioneer; // The address of the auctioneer
 	address public leadingBidder; // The address of the bidder with the highest bid
 	uint public leadingBid; // The value of the current highest bid
+	address public winner; // Address of the bidder with the highest bid
 	string public item; // The item being auctioned
-	string public startingPrice; // The starting price for the auctioned item
+	uint public startingPrice; // The starting price for the auctioned item
 	uint public commitPhaseEndTime; // The time at which the commit phase will end
 
 	bytes32[] public bidCommits; // Array of all the bids committed
 	mapping(bytes32 => string) bidStatuses; // Status of each bid: either 'committed' or 'revealed'
 
-	event logString(string); // Event for logging a 'print statement'
-	event newBidCommit(string, bytes32); // Event for logging a new bid commit
-	event winningBid(string); // Event for printing the auction-winning bid
+	event logString(string log); // Event for logging a 'print statement'
+	event winnerUpdated(string update); // Event for when a new winner is found
+	event newBidCommit(string bid, bytes32 commit); // Event for logging a new bid commit
+	event winningBid(string bid); // Event for printing the auction-winning bid
 
 	/* The constructor for the auction: takes in the commit phase length, name of the item being auctioned,
 	as well as the starting price. */
@@ -105,7 +107,9 @@ contract CommitRevealAuction is usingOraclize {
 		// If the bid is higher than the current leading bid, update the leading bid.
 		if (bidInt > leadingBid){
 			leadingBid = bidInt;
-			logString("Leading bid updated.");
+			winner = msg.sender;
+			// logString("Leading bid updated.");
+			winnerUpdated("Winner updated");
 		}
 
 		logString("Bid counted.");
@@ -113,13 +117,21 @@ contract CommitRevealAuction is usingOraclize {
 	}
 
 	/* Retrieves the winner of the auction */
-	function getWinner() constant returns(uint) {
+	function getWinner() constant returns(address) {
 		// Only get winner after the commit phase has ended
 		if (now < commitPhaseEndTime) {
 			throw;
 		}
 
-		return leadingBid;
+		return winner;
 
+	}
+
+	function getWinningBid() constant returns(uint) {
+		if(now < commitPhaseEndTime) {
+			throw;
+		}
+
+		return leadingBid;
 	}
 }
