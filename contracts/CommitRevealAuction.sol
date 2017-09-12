@@ -93,6 +93,7 @@ contract CommitRevealAuction is usingOraclize {
 		var bidString = _bid.toSlice();
 		var bidValue = bidString.split('-'.toSlice());
 
+		// When logging the bidValue, need to convert it into string from struct using toString()
 		logString(bidValue.toString());
 
 		// Cast the bid from string to integer, so that we can compare it with other values
