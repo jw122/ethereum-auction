@@ -12,6 +12,7 @@ contract CommitRevealAuction is usingOraclize {
 	address public auctioneer; // The address of the auctioneer
 	address public leadingBidder; // The address of the bidder with the highest bid
 	uint public leadingBid; // The value of the current highest bid
+	uint public secondHighest; // The second highest bid (what the winner will pay)
 	address public winner; // Address of the bidder with the highest bid
 	string public item; // The item being auctioned
 	uint public startingPrice; // The starting price for the auctioned item
@@ -107,8 +108,10 @@ contract CommitRevealAuction is usingOraclize {
 
 		// If the bid is higher than the current leading bid, update the leading bid.
 		if (bidInt > leadingBid){
+			secondHighest = leadingBid;
 			leadingBid = bidInt;
 			winner = msg.sender;
+
 			// logString("Leading bid updated.");
 			winnerUpdated("Winner updated");
 		}
