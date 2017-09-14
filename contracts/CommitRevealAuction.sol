@@ -40,6 +40,7 @@ contract CommitRevealAuction is usingOraclize {
 		item = _item; 
 		leadingBid = _price; // Current leading bid will be the starting price itself
 		startingPrice = _price; // The starting price as given in the constructor
+		auctioneer = msg.sender;
 	}
 
 	/* This function is called when a bid is to be committed. The input is the hash of the bid. */
@@ -66,7 +67,7 @@ contract CommitRevealAuction is usingOraclize {
 
 	}
 
-	function revealBid(string _bid, bytes32 _bidCommit) {
+	function revealBid(string _bid, bytes32 _bidCommit) payable{
 		// Only reveal after the commit phase is over
 		if (now < commitPhaseEndTime) {
 			throw;
@@ -108,12 +109,26 @@ contract CommitRevealAuction is usingOraclize {
 
 		// If the bid is higher than the current leading bid, update the leading bid.
 		if (bidInt > leadingBid){
+
+			// Do not refund if current bid is first price above starting price
+			// In other words, if starting price was 100 and first bidder bids 120, do not refund anything.
+			// Only refund first bidder if someone bids higher than their bid
+			if (leadingBid != startingPrice) {
+				// refund the previous winner before updating the winner and leadingBid
+				winner.send(leadingBid);
+			}
+			// store the second highest bid 
 			secondHighest = leadingBid;
 			leadingBid = bidInt;
 			winner = msg.sender;
 
 			// logString("Leading bid updated.");
 			winnerUpdated("Winner updated");
+		}
+
+		// if bid isn't higher than the leadingBid but higher than second, then replace second
+		else if (bidInt < leadingBid && bidInt > secondHighest) {
+			secondHighest = bidInt;
 		}
 
 		logString("Bid counted.");
