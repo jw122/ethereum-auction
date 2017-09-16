@@ -126,9 +126,10 @@ contract CommitRevealAuction is usingOraclize {
 			winnerUpdated("Winner updated");
 		}
 
-		// if bid isn't higher than the leadingBid but higher than second, then replace second
+		// if bid isn't higher than the leadingBid but higher than second, then replace second but don't take the "deposit"
 		else if (bidInt < leadingBid && bidInt > secondHighest) {
 			secondHighest = bidInt;
+			msg.sender.send(msg.value);
 		}
 
 		logString("Bid counted.");
@@ -152,5 +153,10 @@ contract CommitRevealAuction is usingOraclize {
 		}
 
 		return leadingBid;
+	}
+
+	function endAuction() {
+		var difference = leadingBid - secondHighest;
+		winner.send(difference);
 	}
 }
